@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="내 모델 Y">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>내 모델 Y</title>
+<style>
+:root{
+  color-scheme:light;
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#eb6834; --good:#0ca30c; --warn:#fab219; --crit:#d03b3b; --good-text:#006300;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#d95926; --good-text:#0ca30c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --page:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --s1:#3987e5; --s2:#d95926; --good-text:#0ca30c;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 40px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:14px 0 2px}
+header h1{font-size:20px;margin:0}
+.sub{font-size:12px;color:var(--ink2)}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--ink2)}
+nav.tabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;padding:10px 0;background:var(--page);scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--border);background:var(--surface);color:var(--ink2);border-radius:999px;padding:6px 13px;font:inherit;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"],.chip[aria-selected="true"]{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.period{display:flex;gap:6px;margin:2px 0 4px}
+.period .chip{font-size:13px;padding:4px 11px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin:12px 0}
+.card h2{font-size:15px;margin:0 0 2px}
+.card .desc{font-size:12px;color:var(--ink2);margin:0 0 8px}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hero .big{font-size:48px;font-weight:600;line-height:1}
+.hero .big small{font-size:20px;font-weight:500;color:var(--ink2)}
+.hero .side{text-align:right;font-size:13px;color:var(--ink2)}
+.hero .side b{display:block;font-size:22px;color:var(--ink);font-weight:600}
+.meter{height:10px;border-radius:5px;background:var(--grid);margin-top:12px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:5px;background:var(--good)}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+@media (min-width:560px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.tile .l{font-size:12px;color:var(--ink2)}
+.tile .v{font-size:22px;font-weight:600;margin-top:2px}
+.tile .v small{font-size:13px;font-weight:500;color:var(--ink2);margin-left:2px}
+.chart{position:relative;touch-action:pan-y}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.tip{position:absolute;top:0;pointer-events:none;background:var(--ink);color:var(--page);font-size:12px;line-height:1.35;padding:5px 8px;border-radius:6px;white-space:nowrap;transform:translateX(-50%);display:none;z-index:2}
+.empty{color:var(--muted);font-size:13px;margin:16px 0;text-align:center}
+.g-grid{stroke:var(--grid);stroke-width:1}
+.g-axis{stroke:var(--axis);stroke-width:1}
+.g-tick{fill:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+.m-line{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.m-area{fill:var(--s1);opacity:.12}
+.m-bar{fill:var(--s1)}
+.m-dot{fill:var(--s1);stroke:var(--surface);stroke-width:2}
+.m-trend{fill:none;stroke:var(--ink2);stroke-width:1.5;stroke-dasharray:5 4}
+.m-ref{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
+.m-ref-t{fill:var(--muted);font-size:11px}
+.m-hover{stroke:var(--muted);stroke-width:1}
+.m-hdot{fill:var(--s1);stroke:var(--surface);stroke-width:2}
+.tbl{overflow-x:auto;margin:0 -4px}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 4px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500;font-size:12px}
+.tag{font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--border);color:var(--ink2)}
+.more{display:block;margin:10px auto 0;font:inherit;font-size:13px;background:none;border:0;color:var(--s1);cursor:pointer}
+.note{font-size:12px;color:var(--ink2);margin:8px 0 0}
+.status{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--ink2)}
+.status i{width:8px;height:8px;border-radius:50%;display:inline-block}
+label.f{display:block;font-size:13px;color:var(--ink2);margin:10px 0 4px}
+input[type=number]{width:100%;font:inherit;font-size:16px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--page);color:var(--ink)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{font:inherit;font-size:14px;padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--page);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--s1);border-color:var(--s1);color:#fff}
+[hidden]{display:none!important}
+code{font-size:12px;background:var(--page);border:1px solid var(--border);border-radius:4px;padding:0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 id="carName">내 모델 Y</h1>
+      <div class="sub" id="updated">불러오는 중…</div>
+    </div>
+    <span class="badge" id="srcBadge"></span>
+  </header>
+
+  <nav class="tabs" role="tablist" id="tabs">
+    <button class="chip" role="tab" data-tab="overview" aria-selected="true">개요</button>
+    <button class="chip" role="tab" data-tab="drives">주행</button>
+    <button class="chip" role="tab" data-tab="charges">충전</button>
+    <button class="chip" role="tab" data-tab="drain">흡혈 방전</button>
+    <button class="chip" role="tab" data-tab="degrade">배터리 열화</button>
+    <button class="chip" role="tab" data-tab="settings">설정</button>
+  </nav>
+
+  <div class="period" id="period">
+    <button class="chip" data-p="7">7일</button>
+    <button class="chip" data-p="30" aria-pressed="true">30일</button>
+    <button class="chip" data-p="90">90일</button>
+    <button class="chip" data-p="all">전체</button>
+  </div>
+
+  <!-- 개요 -->
+  <section data-panel="overview">
+    <div class="card">
+      <div class="hero">
+        <div>
+          <div class="sub">배터리</div>
+          <div class="big" id="socBig">–<small>%</small></div>
+        </div>
+        <div class="side">예상 주행가능<b id="rangeBig">– km</b><span id="odo"></span></div>
+      </div>
+      <div class="meter"><i id="socBar" style="width:0"></i></div>
+    </div>
+    <div class="tiles" id="ovTiles"></div>
+    <div class="card"><h2>배터리 잔량 (최근 7일)</h2><p class="desc">손가락으로 누르면 시점별 값이 보입니다.</p><div class="chart" id="cSoc"></div></div>
+    <div class="card"><h2>일별 주행거리</h2><p class="desc" id="dKmDesc"></p><div class="chart" id="cDailyKm"></div></div>
+  </section>
+
+  <!-- 주행 -->
+  <section data-panel="drives" hidden>
+    <div class="tiles" id="drTiles"></div>
+    <div class="card"><h2>주행별 전비 (Wh/km)</h2><p class="desc">낮을수록 효율이 좋습니다. 겨울·고속 주행에서 올라갑니다.</p><div class="chart" id="cEff"></div></div>
+    <div class="card"><h2>주행 기록</h2><div class="tbl" id="tDrives"></div></div>
+  </section>
+
+  <!-- 충전 -->
+  <section data-panel="charges" hidden>
+    <div class="tiles" id="chTiles"></div>
+    <div class="card"><h2>주간 충전량 (kWh)</h2><div class="chart" id="cCharge"></div></div>
+    <div class="card"><h2>충전 기록</h2><div class="tbl" id="tCharges"></div></div>
+  </section>
+
+  <!-- 흡혈 방전 -->
+  <section data-panel="drain" hidden>
+    <div class="tiles" id="vaTiles"></div>
+    <div class="card"><h2>주차 중 방전 속도 (%/일)</h2><p class="desc">3시간 이상 세워둔 구간만 계산합니다. 점선은 하루 1% 기준선입니다.</p><div class="chart" id="cDrain"></div></div>
+    <div class="card"><h2>주차 구간</h2><div class="tbl" id="tDrain"></div>
+      <p class="note">방전이 크면: 센트리 모드, 실내 과열 방지, 원격 공조, 차를 자주 깨우는 앱/위젯을 확인해 보세요.</p></div>
+  </section>
+
+  <!-- 열화 -->
+  <section data-panel="degrade" hidden>
+    <div class="tiles" id="dgTiles"></div>
+    <div class="card"><h2>100% 환산 주행가능거리 추이</h2><p class="desc">충전 완료 시 표시 거리 ÷ SOC로 환산한 값입니다. 파선은 추세, 점선은 신차 기준입니다.</p><div class="chart" id="cDeg"></div>
+      <p class="note">차량의 표시 거리는 BMS 추정치라 하루하루 몇 km씩 흔들립니다. 수개월 이상의 추세로 보세요. 기간 선택과 관계없이 전체 데이터를 사용합니다.</p></div>
+  </section>
+
+  <!-- 설정 -->
+  <section data-panel="settings" hidden>
+    <div class="card">
+      <h2>차량 기준값</h2>
+      <label class="f" for="sBase">신차 기준 100% 주행가능거리 (km)</label>
+      <input type="number" id="sBase" inputmode="decimal">
+      <label class="f" for="sCap">배터리 사용 가능 용량 (kWh)</label>
+      <input type="number" id="sCap" inputmode="decimal" step="0.1">
+      <p class="note">2023 모델 Y 롱레인지 국내 인증 511km·약 75kWh가 기본값입니다. 내 차 트림에 맞게 바꾸세요.</p>
+      <div class="btns"><button class="btn primary" id="saveSettings">저장</button></div>
+    </div>
+    <div class="card">
+      <h2>데이터</h2>
+      <p class="desc" id="dataInfo"></p>
+      <div class="btns">
+        <label class="btn">JSON 불러오기<input type="file" id="fileIn" accept="application/json,.json" hidden></label>
+        <button class="btn" id="exportBtn">현재 데이터 내보내기</button>
+        <button class="btn" id="resetBtn">샘플 데이터로 되돌리기</button>
+      </div>
+      <p class="note">불러온 데이터는 이 기기 브라우저에만 저장됩니다. 2단계에서 서버가 <code>data/latest.json</code>을 만들면 자동으로 그 파일을 읽습니다.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+const HOUR = 36e5, DAY = 864e5;
+const LS_DATA = 'my-model-y:data', LS_SET = 'my-model-y:settings';
+const DEFAULTS = { baseline_km: 511, capacity_kwh: 75 };
+
+// ---------- 저장소 (사파리 개인정보 보호 모드 대비) ----------
+function lsGet(k){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null }catch(e){ return null } }
+function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true }catch(e){ return false } }
+function lsDel(k){ try{ localStorage.removeItem(k) }catch(e){} }
+
+// ---------- 포맷 ----------
+const WD = ['일','월','화','수','목','금','토'];
+const pad = n => String(n).padStart(2,'0');
+const fmtMD = t => { const d = new Date(t); return `${d.getMonth()+1}/${d.getDate()}` };
+const fmtDT = t => { const d = new Date(t); return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]}) ${pad(d.getHours())}:${pad(d.getMinutes())}` };
+const fmtDur = h => h < 1 ? `${Math.round(h*60)}분` : h < 48 ? `${Math.floor(h)}시간 ${Math.round((h%1)*60)}분` : `${(h/24).toFixed(1)}일`;
+const n0 = v => v == null || isNaN(v) ? '–' : Math.round(v).toLocaleString('ko-KR');
+const n1 = v => v == null || isNaN(v) ? '–' : v.toFixed(1);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- 샘플 데이터 (실제 연결 전 화면 확인용) ----------
+function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296 } }
+
+function makeSample(){
+  const r = rng(20231028), days = 120;
+  const end = new Date(); end.setMinutes(0,0,0);
+  const endT = end.getTime();
+  const d0 = new Date(endT - days*DAY); d0.setHours(0,0,0,0);
+  const iso = t => new Date(t).toISOString();
+  const fullAt = d => 494 - d*0.045;          // 서서히 줄어드는 100% 환산 거리
+  let soc = 78, odo = 28400, last = d0.getTime();
+  const drives = [], charges = [], snapshots = [];
+  const snap = (t, d) => snapshots.push({ t: iso(t), soc: +soc.toFixed(1), range_km: Math.round(fullAt(d)*soc/100), odometer_km: Math.round(odo) });
+  const park = t => {
+    const h = (t - last) / HOUR; if (h <= 0) return;
+    const rate = (r() < 0.15 ? 0.05 : 0.015) + r()*0.015; // %/시간, 가끔 센트리 모드
+    soc = Math.max(5, soc - h*rate);
+  };
+  const charge = (s, d, type, target, location) => {
+    park(s); snap(s, d);
+    const cap = DEFAULTS.capacity_kwh * fullAt(d) / DEFAULTS.baseline_km;
+    const before = soc, kwh = (target - before)/100 * cap * (type === 'AC' ? 1.09 : 1.03);
+    const e = s + (type === 'AC' ? kwh/10.5*HOUR : (target-before)*0.42*6e4);
+    soc = target; last = e; snap(e, d);
+    charges.push({ start: iso(s), end: iso(e), type, location, start_soc: +before.toFixed(1), end_soc: target,
+      energy_added_kwh: +kwh.toFixed(1), end_range_km: Math.round(fullAt(d)*target/100 + (r()-0.5)*8) });
+  };
+  for (let d = 0; d < days; d++){
+    const day = d0.getTime() + d*DAY, dt = new Date(day), wd = dt.getDay(), m = dt.getMonth();
+    const weekend = wd === 0 || wd === 6, cold = m <= 1 || m >= 10;
+    const trips = weekend
+      ? (r() < 0.7 ? [{ h: 10 + Math.floor(r()*4), km: r() < 0.25 ? 120 + r()*150 : 20 + r()*50 }] : [])
+      : [{ h: 7.5, km: 16 + r()*8 }, { h: 18, km: 16 + r()*8 }].concat(r() < 0.3 ? [{ h: 20.5, km: 4 + r()*12 }] : []);
+    for (const tr of trips){
+      let s = day + tr.h*HOUR + Math.floor(r()*30)*6e4;
+      if (s + 2*HOUR > endT) break;
+      const eff = (cold ? 180 : 148) + r()*25 + (tr.km > 100 ? 18 : 0);
+      const cap = DEFAULTS.capacity_kwh * fullAt(d) / DEFAULTS.baseline_km;
+      park(s);
+      if (soc - tr.km*eff/1000/cap*100 < 12){ charge(s, d, 'DC', 80, '슈퍼차저'); s = last + 5*6e4; }
+      park(s); snap(s, d);
+      const kwh = tr.km*eff/1000, before = soc, o0 = odo;
+      const e = s + tr.km/(tr.km > 100 ? 85 : 35)*HOUR;
+      soc -= kwh/cap*100; odo += tr.km; last = e; snap(e, d);
+      drives.push({ start: iso(s), end: iso(e), start_soc: +before.toFixed(1), end_soc: +soc.toFixed(1),
+        distance_km: +tr.km.toFixed(1), energy_kwh: +kwh.toFixed(2), start_odometer_km: Math.round(o0) });
+    }
+    const night = day + 22*HOUR + Math.floor(r()*40)*6e4;
+    if (night + 8*HOUR < endT && (soc < 45 || (soc < 70 && r() < 0.15))) charge(night, d, 'AC', 80, '집');
+  }
+  park(endT); snap(endT, days);
+  return { source: 'sample', vehicle: { name: '내 모델 Y', model: 'Model Y Long Range', year: 2023 }, drives, charges, snapshots };
+}
+
+// ---------- 분석 ----------
+function analyze(raw, set){
+  const P = t => new Date(t).getTime();
+  const drives = (raw.drives || []).map(d => ({ ...d, s: P(d.start), e: P(d.end) })).filter(d => !isNaN(d.s)).sort((a,b) => a.s - b.s);
+  const charges = (raw.charges || []).map(c => ({ ...c, s: P(c.start), e: P(c.end) })).filter(c => !isNaN(c.s)).sort((a,b) => a.s - b.s);
+  for (const d of drives){
+    if (d.energy_kwh == null && d.start_soc != null && d.end_soc != null) d.energy_kwh = (d.start_soc - d.end_soc)/100 * set.capacity_kwh;
+    d.eff = d.distance_km >= 1 && d.energy_kwh > 0 ? d.energy_kwh*1000/d.distance_km : null;
+  }
+  const events = [...drives, ...charges].sort((a,b) => a.s - b.s);
+  let snapshots = (raw.snapshots || []).map(p => ({ ...p, x: P(p.t) })).filter(p => !isNaN(p.x) && p.soc != null);
+  if (!snapshots.length) for (const ev of events){ snapshots.push({ x: ev.s, soc: ev.start_soc }, { x: ev.e, soc: ev.end_soc }) }
+  snapshots = snapshots.filter(p => p.soc != null).sort((a,b) => a.x - b.x);
+
+  // 흡혈 방전: 이벤트 사이 3시간 이상 주차 구간
+  const parks = [];
+  for (let i = 0; i < events.length - 1; i++){
+    const a = events[i], b = events[i+1], h = (b.s - a.e)/HOUR;
+    if (h >= 3 && a.end_soc != null && b.start_soc != null){
+      const drop = Math.max(0, a.end_soc - b.start_soc);
+      parks.push({ s: a.e, e: b.s, h, drop, rate: drop/h*24 });
+    }
+  }
+
+  // 열화: 충전 완료 시 표시거리 ÷ SOC
+  let deg = charges.filter(c => c.end_range_km > 0 && c.end_soc >= 50).map(c => ({ x: c.e, y: c.end_range_km/(c.end_soc/100) }));
+  if (deg.length < 3) deg = snapshots.filter(p => p.range_km > 0 && p.soc >= 60).map(p => ({ x: p.x, y: p.range_km/(p.soc/100) }));
+  let fit = null;
+  if (deg.length >= 3){
+    const n = deg.length, mx = deg.reduce((s,p) => s + p.x, 0)/n, my = deg.reduce((s,p) => s + p.y, 0)/n;
+    let num = 0, den = 0; for (const p of deg){ num += (p.x-mx)*(p.y-my); den += (p.x-mx)**2 }
+    const k = den ? num/den : 0, at = x => my + k*(x - mx);
+    const xs = deg.map(p => p.x), xa = Math.min(...xs), xb = Math.max(...xs);
+    fit = { at, perYear: k*365*DAY, line: [{ x: xa, y: at(xa) }, { x: xb, y: at(xb) }], now: at(xb) };
+  }
+
+  const allT = [...events.map(e => e.e), ...snapshots.map(p => p.x)];
+  const end = allT.length ? Math.max(...allT) : Date.now();
+  const latest = snapshots[snapshots.length - 1] || null;
+  return { drives, charges, snapshots, parks, deg, fit, end, latest };
+}
+
+// ---------- 차트 (단일 시리즈, SVG) ----------
+function niceTicks(min, max, n = 4){
+  if (min === max){ min -= 1; max += 1 }
+  const raw = (max - min)/n, mag = 10 ** Math.floor(Math.log10(raw)), e = raw/mag;
+  const step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
+  const out = []; for (let v = Math.floor(min/step)*step; v <= Math.ceil(max/step)*step + step/2; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+function barPath(x, y, w, h, r){
+  r = Math.max(0, Math.min(r, w/2, h));
+  return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`;
+}
+function drawChart(el, cfg){
+  const pts = cfg.data;
+  if (!pts.length){ el.innerHTML = '<p class="empty">이 기간에 데이터가 없습니다.</p>'; return }
+  const W = Math.max(260, el.clientWidth || 320), H = cfg.h || 190, L = 42, R = 10, T = 10, B = 24;
+  const bar = cfg.type === 'bar', band = cfg.band || DAY;
+  let x0 = Math.min(...pts.map(p => p.x)), x1 = Math.max(...pts.map(p => p.x));
+  if (bar){ x0 -= band/2; x1 += band/2 }
+  if (x0 === x1){ x0 -= DAY; x1 += DAY }
+  let ys = pts.map(p => p.y);
+  if (cfg.trend) ys = ys.concat(cfg.trend.map(p => p.y));
+  if (cfg.ref) ys.push(cfg.ref.y);
+  let lo = Math.min(...ys), hi = Math.max(...ys);
+  if (bar) lo = Math.min(0, lo);
+  if (cfg.yMin != null) lo = cfg.yMin;
+  if (cfg.yMax != null) hi = cfg.yMax;
+  const ticks = niceTicks(lo, hi);
+  const y0 = cfg.yMin != null ? cfg.yMin : ticks[0], y1 = cfg.yMax != null ? cfg.yMax : ticks[ticks.length-1];
+  const sx = v => L + (v - x0)/(x1 - x0)*(W - L - R);
+  const sy = v => T + (1 - (v - y0)/(y1 - y0))*(H - T - B);
+  const yf = cfg.yFmt || (v => v);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(cfg.label || '')}">`;
+  for (const v of ticks) if (v >= y0 - 1e-9 && v <= y1 + 1e-9)
+    s += `<line class="g-grid" x1="${L}" x2="${W-R}" y1="${sy(v)}" y2="${sy(v)}"/><text class="g-tick" x="${L-6}" y="${sy(v)+4}" text-anchor="end">${yf(v)}</text>`;
+  const nX = W < 400 ? 3 : 5;
+  for (let i = 0; i < nX; i++){
+    const v = x0 + (x1 - x0)*(i + 0.5)/nX;
+    s += `<text class="g-tick" x="${sx(v)}" y="${H-6}" text-anchor="middle">${fmtMD(v)}</text>`;
+  }
+  if (cfg.ref) s += `<line class="m-ref" x1="${L}" x2="${W-R}" y1="${sy(cfg.ref.y)}" y2="${sy(cfg.ref.y)}"/><text class="m-ref-t" x="${W-R}" y="${sy(cfg.ref.y)-5}" text-anchor="end">${esc(cfg.ref.label)}</text>`;
+  if (bar){
+    const bw = Math.max(2, sx(x0 + band) - sx(x0) - 2);
+    for (const p of pts){ const yt = sy(Math.max(0, p.y)), yb = sy(0); if (yb - yt > 0.5) s += `<path class="m-bar" d="${barPath(sx(p.x)-bw/2, yt, bw, yb-yt, 4)}"/>` }
+  } else if (cfg.type === 'line'){
+    const d = pts.map((p,i) => `${i ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join('');
+    s += `<path class="m-area" d="${d}L${sx(pts[pts.length-1].x)},${sy(y0)}L${sx(pts[0].x)},${sy(y0)}Z"/><path class="m-line" d="${d}"/>`;
+  } else {
+    for (const p of pts) s += `<circle class="m-dot" cx="${sx(p.x)}" cy="${sy(p.y)}" r="4.5"/>`;
+  }
+  if (cfg.trend) s += `<path class="m-trend" d="M${sx(cfg.trend[0].x)},${sy(cfg.trend[0].y)}L${sx(cfg.trend[1].x)},${sy(cfg.trend[1].y)}"/>`;
+  s += `<line class="g-axis" x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}"/>`;
+  s += `<g class="hv" style="display:none"><line class="m-hover" y1="${T}" y2="${H-B}"/><circle class="m-hdot" r="5"/></g></svg><div class="tip"></div>`;
+  el.innerHTML = s;
+
+  const svg = el.querySelector('svg'), hv = svg.querySelector('.hv'), tip = el.querySelector('.tip');
+  const ln = hv.querySelector('line'), dot = hv.querySelector('circle');
+  const show = ev => {
+    const rc = svg.getBoundingClientRect(), px = (ev.clientX - rc.left) * W / rc.width;
+    let best = 0, bd = Infinity;
+    pts.forEach((p,i) => { const dd = Math.abs(sx(p.x) - px); if (dd < bd){ bd = dd; best = i } });
+    const p = pts[best], cx = sx(p.x), cy = sy(bar ? Math.max(0, p.y) : p.y);
+    hv.style.display = ''; ln.setAttribute('x1', cx); ln.setAttribute('x2', cx);
+    dot.style.display = bar ? 'none' : ''; dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
+    tip.innerHTML = cfg.tip(p); tip.style.display = 'block';
+    const half = tip.offsetWidth/2, left = Math.min(Math.max(cx * rc.width / W, half), rc.width - half);
+    tip.style.left = left + 'px';
+    tip.style.top = Math.max(0, cy * rc.height / H - tip.offsetHeight - 10) + 'px';
+  };
+  svg.addEventListener('pointermove', show);
+  svg.addEventListener('pointerdown', show);
+  svg.addEventListener('pointerleave', ev => { if (ev.pointerType === 'mouse'){ hv.style.display = 'none'; tip.style.display = 'none' } });
+}
+
+// ---------- 화면 ----------
+const $ = id => document.getElementById(id);
+const state = { tab: 'overview', period: '30', raw: null, src: 'sample', set: { ...DEFAULTS, ...(lsGet(LS_SET) || {}) }, a: null, rows: { drives: 15, charges: 15, drain: 15 } };
+
+const tile = (l, v, u = '') => `<div class="tile"><div class="l">${l}</div><div class="v">${v}${u ? `<small>${u}</small>` : ''}</div></div>`;
+const inPeriod = t => state.period === 'all' || t >= state.a.end - Number(state.period)*DAY;
+function table(id, key, head, rows){
+  const n = state.rows[key], shown = rows.slice(0, n);
+  $(id).innerHTML = rows.length
+    ? `<table><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${shown.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+      + (rows.length > n ? `<button class="more" data-more="${key}">더 보기 (${rows.length - n}건 남음)</button>` : '')
+    : '<p class="empty">이 기간에 기록이 없습니다.</p>';
+}
+function dailyKm(drives){
+  const from = state.period === 'all' ? (drives[0]?.s ?? state.a.end) : state.a.end - Number(state.period)*DAY;
+  const map = new Map();
+  for (const d of drives){ const k = new Date(d.s).setHours(12,0,0,0); map.set(k, (map.get(k) || 0) + (d.distance_km || 0)) }
+  const out = [], first = new Date(from).setHours(12,0,0,0), last = new Date(state.a.end).setHours(12,0,0,0);
+  for (let t = first; t <= last; t = new Date(t + DAY + 2*HOUR).setHours(12,0,0,0)) out.push({ x: t, y: map.get(t) || 0 });
+  return out;
+}
+const avgEff = ds => { const e = ds.reduce((s,d) => s + (d.energy_kwh || 0), 0), k = ds.reduce((s,d) => s + (d.eff ? d.distance_km : 0), 0); return k ? e*1000/k : null };
+const avgRate = ps => { const h = ps.reduce((s,p) => s + p.h, 0); return h ? ps.reduce((s,p) => s + p.drop, 0)/h*24 : null };
+const fullRange = () => state.a.fit ? state.a.fit.now : state.set.baseline_km;
+
+function renderOverview(a){
+  const L = a.latest;
+  const soc = L ? L.soc : null;
+  $('socBig').innerHTML = `${soc == null ? '–' : Math.round(soc)}<small>%</small>`;
+  $('rangeBig').textContent = `${n0(L?.range_km ?? (soc != null ? fullRange()*soc/100 : null))} km`;
+  $('odo').textContent = L?.odometer_km ? `누적 ${n0(L.odometer_km)} km` : '';
+  const bar = $('socBar'); bar.style.width = `${soc || 0}%`;
+  bar.style.background = soc < 20 ? 'var(--crit)' : soc < 40 ? 'var(--warn)' : 'var(--good)';
+  const ds = a.drives.filter(d => inPeriod(d.s)), cs = a.charges.filter(c => inPeriod(c.s)), ps = a.parks.filter(p => inPeriod(p.s));
+  $('ovTiles').innerHTML = tile('주행거리', n0(ds.reduce((s,d) => s + (d.distance_km || 0), 0)), 'km')
+    + tile('평균 전비', n0(avgEff(ds)), 'Wh/km')
+    + tile('충전량', n0(cs.reduce((s,c) => s + (c.energy_added_kwh || 0), 0)), 'kWh')
+    + tile('흡혈 방전', n1(avgRate(ps)), '%/일');
+  const soc7 = a.snapshots.filter(p => p.x >= a.end - 7*DAY).map(p => ({ x: p.x, y: p.soc }));
+  drawChart($('cSoc'), { type: 'line', data: soc7, yMin: 0, yMax: 100, yFmt: v => v + '%', label: '최근 7일 배터리 잔량', tip: p => `${fmtDT(p.x)}<br><b>${n1(p.y)}%</b>` });
+  const km = dailyKm(ds);
+  $('dKmDesc').textContent = `하루 평균 ${n1(km.reduce((s,p) => s + p.y, 0)/Math.max(1, km.length))} km`;
+  drawChart($('cDailyKm'), { type: 'bar', data: km, yFmt: v => v, label: '일별 주행거리', tip: p => `${fmtMD(p.x)} (${WD[new Date(p.x).getDay()]})<br><b>${n1(p.y)} km</b>` });
+}
+function renderDrives(a){
+  const ds = a.drives.filter(d => inPeriod(d.s));
+  const longest = ds.reduce((m,d) => Math.max(m, d.distance_km || 0), 0);
+  $('drTiles').innerHTML = tile('주행 횟수', ds.length, '회') + tile('총 거리', n0(ds.reduce((s,d) => s + (d.distance_km || 0), 0)), 'km')
+    + tile('평균 전비', n0(avgEff(ds)), 'Wh/km') + tile('최장 주행', n0(longest), 'km');
+  drawChart($('cEff'), { type: 'dot', data: ds.filter(d => d.eff).map(d => ({ x: d.s, y: d.eff, d })), label: '주행별 전비',
+    tip: p => `${fmtDT(p.x)} · ${n1(p.d.distance_km)} km<br><b>${n0(p.y)} Wh/km</b>` });
+  table('tDrives', 'drives', ['출발', '거리', '시간', '에너지', '전비', 'SOC'],
+    ds.slice().reverse().map(d => [fmtDT(d.s), `${n1(d.distance_km)} km`, fmtDur((d.e - d.s)/HOUR), `${n1(d.energy_kwh)} kWh`, d.eff ? n0(d.eff) : '–', `${n0(d.start_soc)}→${n0(d.end_soc)}%`]));
+}
+function renderCharges(a){
+  const cs = a.charges.filter(c => inPeriod(c.s));
+  const tot = cs.reduce((s,c) => s + (c.energy_added_kwh || 0), 0), dc = cs.filter(c => c.type === 'DC').reduce((s,c) => s + (c.energy_added_kwh || 0), 0);
+  $('chTiles').innerHTML = tile('충전 횟수', cs.length, '회') + tile('총 충전량', n0(tot), 'kWh')
+    + tile('급속(DC) 비중', tot ? n0(dc/tot*100) : '–', '%') + tile('평균 충전 후', cs.length ? n0(cs.reduce((s,c) => s + c.end_soc, 0)/cs.length) : '–', '%');
+  const wk = new Map();
+  for (const c of cs){ const d = new Date(c.s); d.setHours(0,0,0,0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); const k = d.getTime() + 3.5*DAY; wk.set(k, (wk.get(k) || 0) + (c.energy_added_kwh || 0)) }
+  drawChart($('cCharge'), { type: 'bar', band: 7*DAY, data: [...wk].sort((x,y) => x[0] - y[0]).map(([x,y]) => ({ x, y })), label: '주간 충전량',
+    tip: p => `${fmtMD(p.x - 3.5*DAY)} 주<br><b>${n1(p.y)} kWh</b>` });
+  table('tCharges', 'charges', ['시작', '종류', '장소', 'SOC', '충전량', '시간'],
+    cs.slice().reverse().map(c => [fmtDT(c.s), `<span class="tag">${c.type === 'DC' ? '급속' : '완속'}</span>`, esc(c.location || '–'), `${n0(c.start_soc)}→${n0(c.end_soc)}%`, `${n1(c.energy_added_kwh)} kWh`, fmtDur((c.e - c.s)/HOUR)]));
+}
+function renderDrain(a){
+  const ps = a.parks.filter(p => inPeriod(p.s)), rate = avgRate(ps);
+  $('vaTiles').innerHTML = tile('평균 방전', n1(rate), '%/일') + tile('하루 손실 거리', rate == null ? '–' : n1(rate/100*fullRange()), 'km')
+    + tile('가장 심한 구간', ps.length ? n1(Math.max(...ps.map(p => p.rate))) : '–', '%/일') + tile('주차 구간', ps.length, '회');
+  drawChart($('cDrain'), { type: 'dot', data: ps.map(p => ({ x: p.s, y: p.rate, p })), yMin: 0, ref: { y: 1, label: '1%/일' }, yFmt: v => v + '%', label: '주차 중 방전 속도',
+    tip: p => `${fmtDT(p.x)} · ${fmtDur(p.p.h)}<br><b>${n1(p.y)}%/일</b> (−${n1(p.p.drop)}%)` });
+  table('tDrain', 'drain', ['주차 시작', '시간', 'SOC 감소', '속도'],
+    ps.slice().reverse().map(p => [fmtDT(p.s), fmtDur(p.h), `${n1(p.drop)}%`, `${n1(p.rate)}%/일`]));
+}
+function renderDegrade(a){
+  const base = state.set.baseline_km, f = a.fit;
+  const pct = f ? (1 - f.now/base)*100 : null;
+  $('dgTiles').innerHTML = tile('현재 추정 100%', f ? n0(f.now) : '–', 'km') + tile('신차 기준', n0(base), 'km')
+    + tile('추정 열화율', pct == null ? '–' : n1(pct), '%') + tile('연간 변화', f ? (f.perYear >= 0 ? '+' : '') + n1(f.perYear) : '–', 'km/년');
+  drawChart($('cDeg'), { type: 'dot', data: a.deg, trend: f?.line, ref: { y: base, label: `신차 ${base} km` }, yFmt: v => n0(v), label: '100% 환산 주행가능거리', h: 210,
+    tip: p => `${fmtMD(p.x)}<br><b>${n0(p.y)} km</b>` });
+}
+function renderSettings(){
+  $('sBase').value = state.set.baseline_km; $('sCap').value = state.set.capacity_kwh;
+  const r = state.raw;
+  const label = { sample: '샘플 데이터 (가짜)', imported: '직접 불러온 파일', server: '서버 data/latest.json' }[state.src];
+  $('dataInfo').textContent = `현재: ${label} · 주행 ${r.drives?.length || 0}건 · 충전 ${r.charges?.length || 0}건`;
+}
+
+function render(){
+  const a = state.a;
+  $('carName').textContent = state.raw.vehicle?.name || '내 모델 Y';
+  $('updated').textContent = `마지막 데이터 ${fmtDT(a.end)}`;
+  $('srcBadge').textContent = { sample: '샘플', imported: '내 데이터', server: '서버' }[state.src];
+  document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== state.tab);
+  $('period').hidden = state.tab === 'degrade' || state.tab === 'settings';
+  ({ overview: renderOverview, drives: renderDrives, charges: renderCharges, drain: renderDrain, degrade: renderDegrade, settings: renderSettings })[state.tab](a);
+}
+function setData(raw, src){ state.raw = raw; state.src = src; state.a = analyze(raw, state.set); render() }
+
+$('tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]'); if (!b) return;
+  state.tab = b.dataset.tab;
+  document.querySelectorAll('#tabs .chip').forEach(x => x.setAttribute('aria-selected', x === b));
+  render();
+});
+$('period').addEventListener('click', e => {
+  const b = e.target.closest('[data-p]'); if (!b) return;
+  state.period = b.dataset.p;
+  document.querySelectorAll('#period .chip').forEach(x => x.setAttribute('aria-pressed', x === b));
+  render();
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-more]'); if (!b) return;
+  state.rows[b.dataset.more] += 30; render();
+});
+$('saveSettings').addEventListener('click', () => {
+  const base = parseFloat($('sBase').value), cap = parseFloat($('sCap').value);
+  if (base > 0) state.set.baseline_km = base;
+  if (cap > 0) state.set.capacity_kwh = cap;
+  lsSet(LS_SET, state.set); setData(state.raw, state.src);
+});
+$('fileIn').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const raw = JSON.parse(await f.text());
+    if (!Array.isArray(raw.drives) && !Array.isArray(raw.charges)) throw new Error('drives 또는 charges 배열이 없습니다.');
+    if (!lsSet(LS_DATA, raw)) alert('파일은 열었지만 이 브라우저에 저장하지 못했습니다(개인정보 보호 모드?). 새로고침하면 사라집니다.');
+    setData(raw, 'imported');
+  } catch (err) { alert('불러오기 실패: ' + err.message) }
+  e.target.value = '';
+});
+$('exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state.raw, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'model-y-data.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('resetBtn').addEventListener('click', () => { lsDel(LS_DATA); setData(makeSample(), 'sample') });
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 150) });
+
+// 데이터 우선순위: 직접 불러온 파일 → 서버가 만든 data/latest.json → 샘플
+(async () => {
+  const saved = lsGet(LS_DATA);
+  if (saved) return setData(saved, 'imported');
+  try {
+    const res = await fetch('data/latest.json', { cache: 'no-store' });
+    if (res.ok) return setData(await res.json(), 'server');
+  } catch (e) {}
+  setData(makeSample(), 'sample');
+})();
+</script>
+</body>
+</html>

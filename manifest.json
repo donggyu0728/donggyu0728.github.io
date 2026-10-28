@@ -1,0 +1,9 @@
+{
+  "name": "내 모델 Y",
+  "short_name": "모델 Y",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f9f9f7",
+  "theme_color": "#f9f9f7",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

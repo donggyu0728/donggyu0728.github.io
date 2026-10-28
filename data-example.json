@@ -1,0 +1,14 @@
+{
+  "vehicle": { "name": "내 모델 Y", "model": "Model Y Long Range", "year": 2023 },
+  "drives": [
+    { "start": "2026-10-27T07:42:00+09:00", "end": "2026-10-27T08:20:00+09:00",
+      "start_soc": 78.0, "end_soc": 73.1, "distance_km": 21.4, "energy_kwh": 3.4, "start_odometer_km": 41230 }
+  ],
+  "charges": [
+    { "start": "2026-10-26T22:10:00+09:00", "end": "2026-10-27T01:05:00+09:00",
+      "type": "AC", "location": "집", "start_soc": 42.0, "end_soc": 80, "energy_added_kwh": 30.8, "end_range_km": 385 }
+  ],
+  "snapshots": [
+    { "t": "2026-10-27T08:20:00+09:00", "soc": 73.1, "range_km": 352, "odometer_km": 41251 }
+  ]
+}
